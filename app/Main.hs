@@ -47,14 +47,17 @@ printResults results optionString =
                     case parseOnly optionsParser (pack optionString) of
                         Right selectorTypes -> 
                             let
-                                bools :: Selector -> [ Bool ]
-                                bools selector = map (is selector) selectorTypes
+                                predicates =
+                                    map isSelector selectorTypes
                             in
-                                filter (\selector -> foldl (||) False (bools selector))
+                                filter (orFilter predicates)
                         _ -> id
             in
                 mapM_ prettyPrint $ (nub . optionalFilter) selectors
 
+orFilter :: [ a -> Bool ] -> a -> Bool
+orFilter fs a =
+    foldl (\acc f -> f a || acc) False fs 
 
 
 -- OPTION PARSERS
@@ -84,12 +87,12 @@ optionParser =
     <|> string "pc" *> pure PseudoClasses
 
 
-is :: Selector -> Option -> Bool
-is selector  option =
+isSelector :: Option -> Selector -> Bool
+isSelector option =
     case option of
-        Classes        -> isClass selector
-        Types          -> isType selector
-        Ids            -> isId selector
-        Attributes     -> isAttribute selector
-        PseudoElements -> isPseudoElement selector
-        PseudoClasses  -> isPseudoClass selector
+        Classes        -> isClass
+        Types          -> isType
+        Ids            -> isId
+        Attributes     -> isAttribute
+        PseudoElements -> isPseudoElement
+        PseudoClasses  -> isPseudoClass
