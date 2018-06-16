@@ -7,8 +7,11 @@ import           Control.Monad (mapM_)
 import           System.Environment
 import           Prelude               hiding (readFile)
 import           Data.Text.IO
+import           Data.Text (Text, pack)
 import           Data.List
 import           Selector
+import           Control.Applicative
+import           Data.Attoparsec.Text
 
 
 main :: IO ()
@@ -33,22 +36,60 @@ parseCssFile cssFile =
 
 
 printResults :: Either String [ Selector ] -> String -> IO ()
-printResults results option =
+printResults results optionString =
     case results of
         Left err ->
             print err
 
         Right selectors ->
             let
-                filterOption =
-                    case option of
-                        "c" -> filter isClass
-                        "t" -> filter isType
-                        "i" -> filter isId
-                        "a" -> filter isAttribute
-                        "pe" -> filter isPseudoElement
-                        "pc" -> filter isPseudoClass
-                        otherwise -> id
+                optionalFilter =
+                    case parseOnly optionsParser (pack optionString) of
+                        Right selectorTypes -> 
+                            let
+                                bools :: Selector -> [ Bool ]
+                                bools selector = map (is selector) selectorTypes
+                            in
+                                filter (\selector -> foldl (||) False (bools selector))
+                        _ -> id
             in
-                mapM_ prettyPrint $ (nub . filterOption) selectors
+                mapM_ prettyPrint $ (nub . optionalFilter) selectors
 
+
+
+-- OPTION PARSERS
+
+
+data Option
+    = Classes
+    | Types
+    | Ids
+    | Attributes
+    | PseudoElements
+    | PseudoClasses
+
+
+optionsParser :: Parser [ Option ]
+optionsParser =
+    char '-' *> many optionParser
+
+
+optionParser :: Parser Option
+optionParser =
+    char 'c'        *> pure Classes
+    <|> char 't'    *> pure Types
+    <|> char 'i'    *> pure Ids
+    <|> char 'a'    *> pure Attributes
+    <|> string "pe" *> pure PseudoElements
+    <|> string "pc" *> pure PseudoClasses
+
+
+is :: Selector -> Option -> Bool
+is selector  option =
+    case option of
+        Classes        -> isClass selector
+        Types          -> isType selector
+        Ids            -> isId selector
+        Attributes     -> isAttribute selector
+        PseudoElements -> isPseudoElement selector
+        PseudoClasses  -> isPseudoClass selector
