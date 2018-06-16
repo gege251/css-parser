@@ -23,13 +23,31 @@ parseCss css = do
 
 document :: Parser [ Selector ]
 document = do
-    skipMany header
+    skipMany atRule
     concat <$> many (junk *> declaration <* junk)
 
 
 junk :: Parser ()
 junk =
     skipMany $ void comment <|> void space
+
+
+declaration :: Parser [ Selector ]
+declaration =
+    nestedAtRule <|> simpleDeclaration
+
+
+simpleDeclaration :: Parser [ Selector ]
+simpleDeclaration = do
+    selectors <- declarationHeader
+    skipSpace
+    declarationContent
+    return selectors
+
+
+declarationHeader :: Parser [ Selector ]
+declarationHeader = do
+    selector `sepBy` selectorCombinators
 
 
 selectorCombinators :: Parser Text
@@ -39,21 +57,6 @@ selectorCombinators =
     <|> skipSpace *> string "+" <* skipSpace
     <|> skipSpace *> string "~" <* skipSpace
     <|> string "" <* skipSpace
-
-
-declarationHeader :: Parser [ Selector ]
-declarationHeader = do
-    selector `sepBy` selectorCombinators
-
-
-declaration :: Parser [ Selector ]
-declaration = do
-    skipSpace
-    selectors <- declarationHeader
-    skipSpace
-    declarationContent
-    skipSpace
-    return selectors
 
 
 declarationContent :: Parser ()
@@ -70,9 +73,21 @@ comment =
     string "/*" *> manyTill anyChar (string "*/")
 
 
-header :: Parser ()
-header = do
+atRule :: Parser ()
+atRule = do
     char '@'
-    skipWhile ((/=) ';')
+    skipWhile (notInClass ";{")
     char ';'
     return ()
+
+
+nestedAtRule :: Parser [ Selector ]
+nestedAtRule = do
+    char '@'
+    skipWhile ((/=) '{')
+    char '{'
+    skipSpace
+    selectors <- many (junk *> declaration <* junk)
+    skipSpace
+    char '}'
+    return $ concat selectors

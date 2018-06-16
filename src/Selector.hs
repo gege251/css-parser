@@ -15,11 +15,16 @@ data Selector
     | UniversalSelector
     | PseudoElement Text
     | PseudoClass Text
-    deriving Eq
+    deriving (Eq, Show)
 
 
-instance Show Selector where
-    show selector =
+prettyPrint :: Selector -> IO ()
+prettyPrint =
+    putStrLn . prettify
+
+
+prettify :: Selector -> String
+prettify selector =
         case selector of
             TypeSelector text -> unpack text
             IdSelector text -> "#" ++ unpack text
@@ -68,6 +73,11 @@ isPseudoClass otherwise       = False
 -- PARSERS
 
 
+unallowedChars :: [ Char ]
+unallowedChars =
+    " {}@.:,[]"
+
+
 selector :: Parser Selector
 selector =
     classSelector
@@ -81,21 +91,21 @@ selector =
 
 typeSelector :: Parser Selector
 typeSelector = do
-    name <- takeWhile1 (notInClass " {.:,[]")
+    name <- takeWhile1 (notInClass unallowedChars)
     return $ TypeSelector name
 
 
 idSelector :: Parser Selector
 idSelector = do
     char '#'
-    name <- takeWhile1 (notInClass " {.:,[]")
+    name <- takeWhile1 (notInClass unallowedChars)
     return $ IdSelector name
 
 
 classSelector :: Parser Selector
 classSelector = do
     char '.'
-    name <- takeWhile1 (notInClass " {.:,[]")
+    name <- takeWhile1 (notInClass unallowedChars)
     return $ ClassSelector name
 
 
@@ -115,12 +125,12 @@ universalSelector =
 pseudoElement :: Parser Selector
 pseudoElement = do
     string "::"
-    name <- takeWhile1 (notInClass "{.:,[]}")
+    name <- takeWhile1 (notInClass unallowedChars)
     return $ PseudoElement name
 
 
 pseudoClass :: Parser Selector
 pseudoClass = do
     char ':'
-    name <- takeWhile1 (notInClass "{.:,[]}")
+    name <- takeWhile1 (notInClass unallowedChars)
     return $ PseudoClass name

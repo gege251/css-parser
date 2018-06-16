@@ -42,13 +42,13 @@ printResults results option =
             let
                 filterOption =
                     case option of
-                        "class" -> filter isClass
-                        "type" -> filter isType
-                        "id" -> filter isId
-                        "attribute" -> filter isAttribute
-                        "pseudo-element" -> filter isPseudoElement
-                        "pseudo-class" -> filter isPseudoClass
+                        "c" -> filter isClass
+                        "t" -> filter isType
+                        "i" -> filter isId
+                        "a" -> filter isAttribute
+                        "pe" -> filter isPseudoElement
+                        "pc" -> filter isPseudoClass
                         otherwise -> id
             in
-                mapM_ print $ (nub . filterOption) selectors
+                mapM_ prettyPrint $ (nub . filterOption) selectors
 
