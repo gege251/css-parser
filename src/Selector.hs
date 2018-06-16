@@ -73,8 +73,8 @@ isPseudoClass otherwise       = False
 -- PARSERS
 
 
-unallowedChars :: [ Char ]
-unallowedChars =
+disallowedChars :: [ Char ]
+disallowedChars =
     " {}@.:,[]"
 
 
@@ -91,21 +91,21 @@ selector =
 
 typeSelector :: Parser Selector
 typeSelector = do
-    name <- takeWhile1 (notInClass unallowedChars)
+    name <- takeWhile1 (notInClass disallowedChars)
     return $ TypeSelector name
 
 
 idSelector :: Parser Selector
 idSelector = do
     char '#'
-    name <- takeWhile1 (notInClass unallowedChars)
+    name <- takeWhile1 (notInClass disallowedChars)
     return $ IdSelector name
 
 
 classSelector :: Parser Selector
 classSelector = do
     char '.'
-    name <- takeWhile1 (notInClass unallowedChars)
+    name <- takeWhile1 (notInClass disallowedChars)
     return $ ClassSelector name
 
 
@@ -125,12 +125,12 @@ universalSelector =
 pseudoElement :: Parser Selector
 pseudoElement = do
     string "::"
-    name <- takeWhile1 (notInClass unallowedChars)
+    name <- takeWhile1 (notInClass disallowedChars)
     return $ PseudoElement name
 
 
 pseudoClass :: Parser Selector
 pseudoClass = do
     char ':'
-    name <- takeWhile1 (notInClass unallowedChars)
+    name <- takeWhile1 (notInClass disallowedChars)
     return $ PseudoClass name
