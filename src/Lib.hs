@@ -2,6 +2,7 @@
 
 module Lib
     ( parseCss
+    , prettify
     , prettyPrint
     , Selector(..)
     , isAttribute

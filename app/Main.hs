@@ -3,14 +3,15 @@
 module Main where
 
 import           Control.Applicative  (many, (*>), (<|>))
-import           Control.Monad        (mapM_)
+import           Control.Monad        (mapM, mapM_)
 import           Data.Attoparsec.Text (Parser, char, parseOnly, string)
 import           Data.List            (nub)
 import           Data.Text            (Text, pack)
 import           Data.Text.IO         (readFile)
+import           Grep                 (GrepResult, grepAt)
 import           Lib                  (Selector (..), isAttribute, isClass,
                                        isId, isPseudoClass, isPseudoElement,
-                                       isType, parseCss, prettyPrint)
+                                       isType, parseCss, prettify, prettyPrint)
 import           Prelude              hiding (readFile)
 import           System.Environment   (getArgs)
 
@@ -21,11 +22,26 @@ main = do
     case args of
         (path : []) -> do
             results <- parseCssFile path
-            printResults results ""
+            printSelectorList (filterSelectors [] <$> results)
 
-        (path : option : []) -> do
+        (path : args : []) -> do
             results <- parseCssFile path
-            printResults results option
+            let eitherOptions = parseOptions args
+            case eitherOptions of
+                Left err      -> putStrLn "Invalid arguments"
+                Right options -> printSelectorList (filterSelectors options <$> results)
+
+        (path : args : grepTarget : []) -> do
+            results <- parseCssFile path
+            let eitherOptions = parseOptions args
+            case eitherOptions of
+                Left err      -> putStrLn "Invalid arguments"
+                Right options -> do
+                    let filtered = filterSelectors options <$> results
+                    grepResults <- grepSelectors grepTarget filtered
+                    case grepResults of
+                        Left err      -> putStrLn err
+                        Right results -> printGrepResults results
 
         otherwise ->
             return ()
@@ -36,33 +52,51 @@ parseCssFile cssFile =
     readFile cssFile >>= return . parseCss
 
 
-printResults :: Either String [ Selector ] -> String -> IO ()
-printResults results optionString =
+printSelectorList :: Either String [ Selector ] -> IO ()
+printSelectorList results =
     case results of
-        Left err ->
-            print err
+        Left err        -> print err
+        Right selectors -> mapM_ prettyPrint selectors
 
-        Right selectors ->
-            let
-                optionalFilter =
-                    case parseOnly optionsParser (pack optionString) of
-                        Right selectorTypes ->
-                            let
-                                predicates =
-                                    map isSelector selectorTypes
-                            in
-                                filter (orFilter predicates)
-                        _ -> id
-            in
-                mapM_ prettyPrint $ (nub . optionalFilter) selectors
+
+printGrepResults :: [( Selector, [ GrepResult ] )] -> IO ()
+printGrepResults results =
+    let
+        printPerGrepResult ( filename, lineNums ) =
+            putStrLn $ "    " ++ filename ++ (show lineNums)
+
+        printPerSelector ( selector, grepResult ) = do
+            prettyPrint selector
+            mapM_ printPerGrepResult grepResult
+    in
+        mapM_ printPerSelector results
+
+
+grepSelectors :: String -> Either String [ Selector ] -> IO (Either String [( Selector, [ GrepResult ] )])
+grepSelectors path eitherSelectors =
+    case eitherSelectors of
+        Left err -> return $ Left err
+        Right selectors -> do
+            grepResults <- mapM ((flip grepAt path) . prettify) selectors
+            return $ fmap (zip selectors) $ sequence grepResults
+
+
+-- OPTIONS
+
+
+filterSelectors :: [ Option ] -> [ Selector ] -> [ Selector ]
+filterSelectors [] selectors            = selectors
+filterSelectors selectorTypes selectors =
+    let
+        predicates =
+            map isSelector selectorTypes
+    in
+        (nub . filter (orFilter predicates)) selectors
 
 
 orFilter :: [ a -> Bool ] -> a -> Bool
 orFilter fs a =
     foldl (\acc f -> f a || acc) False fs
-
-
--- OPTION PARSERS
 
 
 data Option
@@ -72,6 +106,11 @@ data Option
     | Attributes
     | PseudoElements
     | PseudoClasses
+
+
+parseOptions :: String -> Either String [ Option ]
+parseOptions options =
+    parseOnly optionsParser (pack options)
 
 
 optionsParser :: Parser [ Option ]

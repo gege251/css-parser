@@ -1,15 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Grep (grepAt) where
+module Grep (GrepResult, grepAt) where
 
-import           Data.Text        (Text, count, pack, splitOn)
-import           Data.Text.IO     (readFile)
-import           Prelude          hiding (readFile)
-import           System.Directory (doesDirectoryExist, doesFileExist,
-                                   listDirectory)
+import           System.IO.Error
+import           Data.Text         (Text, count, pack, splitOn)
+import           Data.Text.IO      (readFile)
+import           Prelude           hiding (readFile, try)
+import           System.Directory  (doesDirectoryExist, doesFileExist,
+                                    listDirectory)
 
 
-grepAt :: Text -> String -> IO (Either String [ ( String, [ Int ] ) ])
+type GrepResult = ( FileName , [ Int ] )
+
+type FileName = String
+
+
+grepAt :: Text -> String -> IO (Either String [ GrepResult ])
 grepAt query path = do
     fs <- getFileSystemAt path
     case fs of
@@ -17,7 +23,7 @@ grepAt query path = do
         Right fileSystem -> Right <$> grepFileSystem query fileSystem
 
 
-grepFileSystem :: Text -> FileSystem -> IO [ ( String, [ Int ] ) ]
+grepFileSystem :: Text -> FileSystem -> IO [ GrepResult ]
 grepFileSystem query fs =
     case fs of
         File file -> do
@@ -31,10 +37,12 @@ grepFileSystem query fs =
             return $ concat results
 
 
-grepFile :: Text -> String -> IO [ Int ]
+grepFile :: Text -> FileName -> IO [ Int ]
 grepFile query source = do
-    content <- readFile source
-    return $ grep query content
+    fileContent <- tryIOError (readFile source)
+    case fileContent of
+        Left err      -> return []
+        Right content -> return $ grep query content
 
 
 grep :: Text -> Text -> [ Int ]
