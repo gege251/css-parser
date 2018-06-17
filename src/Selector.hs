@@ -16,8 +16,10 @@ module Selector
 import           Control.Applicative  ((<|>))
 import           Data.Attoparsec.Text (Parser, char, inClass, notInClass,
                                        satisfy, string, takeWhile, takeWhile1)
+import           Data.Monoid          ((<>))
 import           Data.Text            (Text, cons, unpack)
-import           Prelude              hiding (takeWhile)
+import           Data.Text.IO         (putStrLn)
+import           Prelude              hiding (putStrLn, takeWhile)
 
 
 data Selector
@@ -36,16 +38,16 @@ prettyPrint =
     putStrLn . prettify
 
 
-prettify :: Selector -> String
+prettify :: Selector -> Text
 prettify selector =
         case selector of
-            TypeSelector text      -> unpack text
-            IdSelector text        -> "#" ++ unpack text
-            ClassSelector text     -> "." ++ unpack text
-            AttributeSelector text -> "[" ++ unpack text ++ "]"
+            TypeSelector text      -> text
+            IdSelector text        -> "#" <> text
+            ClassSelector text     -> "." <> text
+            AttributeSelector text -> "[" <> text <> "]"
             UniversalSelector      -> "*"
-            PseudoElement text     -> "::" ++ unpack text
-            PseudoClass text       -> ":" ++ unpack text
+            PseudoElement text     -> "::" <> text
+            PseudoClass text       -> ":" <> text
 
 
 
