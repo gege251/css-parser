@@ -8,12 +8,13 @@ module Lib
     , Selector(..)
     ) where
 
-import           Prelude hiding (takeWhile)
-import           Control.Applicative
-import           Control.Monad
-import           Data.Attoparsec.Text
-import           Data.Text (Text, unpack)
-import           Selector
+import           Control.Applicative  (many, (*>), (<*), (<|>))
+import           Control.Monad        (void)
+import           Data.Attoparsec.Text (Parser, anyChar, char, manyTill,
+                                       notInClass, parseOnly, sepBy, skipMany,
+                                       skipSpace, skipWhile, space, string)
+import           Data.Text            (Text)
+import           Selector             (Selector (..), selector)
 
 
 parseCss :: Text -> Either String [ Selector ]

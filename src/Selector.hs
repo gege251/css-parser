@@ -2,9 +2,10 @@
 
 module Selector where
 
-import           Data.Attoparsec.Text
-import           Data.Text (Text, unpack)
-import           Control.Applicative
+import           Control.Applicative  ((<|>))
+import           Data.Attoparsec.Text (Parser, char, notInClass, string,
+                                       takeWhile1)
+import           Data.Text            (Text, unpack)
 
 
 data Selector
@@ -26,13 +27,13 @@ prettyPrint =
 prettify :: Selector -> String
 prettify selector =
         case selector of
-            TypeSelector text -> unpack text
-            IdSelector text -> "#" ++ unpack text
-            ClassSelector text -> "." ++ unpack text
+            TypeSelector text      -> unpack text
+            IdSelector text        -> "#" ++ unpack text
+            ClassSelector text     -> "." ++ unpack text
             AttributeSelector text -> "[" ++ unpack text ++ "]"
-            UniversalSelector -> "*"
-            PseudoElement text -> "::" ++ unpack text
-            PseudoClass text -> ":" ++ unpack text
+            UniversalSelector      -> "*"
+            PseudoElement text     -> "::" ++ unpack text
+            PseudoClass text       -> ":" ++ unpack text
 
 
 
@@ -118,7 +119,7 @@ attributeSelector = do
 
 
 universalSelector :: Parser Selector
-universalSelector = 
+universalSelector =
     char '*' *> return UniversalSelector
 
 

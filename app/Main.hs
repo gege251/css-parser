@@ -2,16 +2,18 @@
 
 module Main where
 
-import           Lib
-import           Control.Monad (mapM_)
-import           System.Environment
-import           Prelude               hiding (readFile)
-import           Data.Text.IO
-import           Data.Text (Text, pack)
-import           Data.List
-import           Selector
-import           Control.Applicative
-import           Data.Attoparsec.Text
+import           Control.Applicative  (many, (*>), (<|>))
+import           Control.Monad        (mapM_)
+import           Data.Attoparsec.Text (Parser, char, parseOnly, string)
+import           Data.List            (nub)
+import           Data.Text            (Text, pack)
+import           Data.Text.IO         (readFile)
+import           Lib                  (parseCss)
+import           Prelude              hiding (readFile)
+import           Selector             (Selector (..), isAttribute, isClass,
+                                       isId, isPseudoClass, isPseudoElement,
+                                       isType, prettyPrint)
+import           System.Environment   (getArgs)
 
 
 main :: IO ()
@@ -31,7 +33,7 @@ main = do
 
 
 parseCssFile :: String -> IO (Either String [ Selector ])
-parseCssFile cssFile = 
+parseCssFile cssFile =
     readFile cssFile >>= return . parseCss
 
 
@@ -45,7 +47,7 @@ printResults results optionString =
             let
                 optionalFilter =
                     case parseOnly optionsParser (pack optionString) of
-                        Right selectorTypes -> 
+                        Right selectorTypes ->
                             let
                                 predicates =
                                     map isSelector selectorTypes
@@ -55,9 +57,10 @@ printResults results optionString =
             in
                 mapM_ prettyPrint $ (nub . optionalFilter) selectors
 
+
 orFilter :: [ a -> Bool ] -> a -> Bool
 orFilter fs a =
-    foldl (\acc f -> f a || acc) False fs 
+    foldl (\acc f -> f a || acc) False fs
 
 
 -- OPTION PARSERS
