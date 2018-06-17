@@ -1,11 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Selector where
+module Selector
+    ( Selector (..)
+    , selector
+    , prettify
+    , prettyPrint
+    , isType
+    , isId
+    , isClass
+    , isAttribute
+    , isPseudoClass
+    , isPseudoElement
+    ) where
 
 import           Control.Applicative  ((<|>))
-import           Data.Attoparsec.Text (Parser, char, notInClass, string,
-                                       takeWhile1)
-import           Data.Text            (Text, unpack)
+import           Data.Attoparsec.Text (Parser, char, inClass, notInClass,
+                                       satisfy, string, takeWhile, takeWhile1)
+import           Data.Text            (Text, cons, unpack)
+import           Prelude              hiding (takeWhile)
 
 
 data Selector
@@ -74,9 +86,21 @@ isPseudoClass otherwise       = False
 -- PARSERS
 
 
-disallowedChars :: [ Char ]
-disallowedChars =
-    " {}@.:,[]"
+allowedChars :: [ Char ]
+allowedChars =
+    "_a-zA-Z0-9-"
+
+
+allowedFirstChars :: [ Char ]
+allowedFirstChars =
+    "_a-zA-Z"
+
+
+takeAllowedChars :: Parser Text
+takeAllowedChars = do
+    head <- satisfy (inClass allowedFirstChars)
+    rest <- takeWhile (inClass allowedChars)
+    return $ cons head rest
 
 
 selector :: Parser Selector
@@ -92,21 +116,21 @@ selector =
 
 typeSelector :: Parser Selector
 typeSelector = do
-    name <- takeWhile1 (notInClass disallowedChars)
+    name <- takeAllowedChars
     return $ TypeSelector name
 
 
 idSelector :: Parser Selector
 idSelector = do
     char '#'
-    name <- takeWhile1 (notInClass disallowedChars)
+    name <- takeAllowedChars
     return $ IdSelector name
 
 
 classSelector :: Parser Selector
 classSelector = do
     char '.'
-    name <- takeWhile1 (notInClass disallowedChars)
+    name <- takeAllowedChars
     return $ ClassSelector name
 
 
@@ -126,12 +150,12 @@ universalSelector =
 pseudoElement :: Parser Selector
 pseudoElement = do
     string "::"
-    name <- takeWhile1 (notInClass disallowedChars)
+    name <- takeAllowedChars
     return $ PseudoElement name
 
 
 pseudoClass :: Parser Selector
 pseudoClass = do
     char ':'
-    name <- takeWhile1 (notInClass disallowedChars)
+    name <- takeAllowedChars
     return $ PseudoClass name
