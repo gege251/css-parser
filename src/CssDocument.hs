@@ -46,7 +46,7 @@ simpleDeclaration = do
 
 
 declarationHeader :: Parser [ Selector ]
-declarationHeader = do
+declarationHeader =
     selector `sepBy` selectorCombinators
 
 

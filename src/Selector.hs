@@ -14,11 +14,10 @@ module Selector
     ) where
 
 import           Control.Applicative  ((<|>))
-import           Data.Attoparsec.Text (Parser, char, inClass, notInClass,
-                                       satisfy, skipWhile, string, takeWhile,
-                                       takeWhile1)
+import           Data.Attoparsec.Text (Parser, char, inClass, satisfy,
+                                       skipWhile, string, takeWhile, takeWhile1)
 import           Data.Monoid          ((<>))
-import           Data.Text            (Text, cons, unpack)
+import           Data.Text            (Text, cons)
 import           Data.Text.IO         (putStrLn)
 import           Prelude              hiding (putStrLn, takeWhile)
 
@@ -140,7 +139,7 @@ classSelector = do
 attributeSelector :: Parser Selector
 attributeSelector = do
     char '['
-    name <- takeWhile1 (notInClass "]")
+    name <- takeWhile1 ((/=) ']')
     char ']'
     return $ AttributeSelector name
 
@@ -161,7 +160,7 @@ pseudoClass :: Parser Selector
 pseudoClass = do
     char ':'
     name <- withBrackets <|> takeAllowedChars
-    return $ PseudoClass name 
+    return $ PseudoClass name
 
 
 withBrackets :: Parser Text
