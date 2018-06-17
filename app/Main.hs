@@ -8,11 +8,10 @@ import           Data.Attoparsec.Text (Parser, char, parseOnly, string)
 import           Data.List            (nub)
 import           Data.Text            (Text, pack)
 import           Data.Text.IO         (readFile)
-import           Lib                  (parseCss)
-import           Prelude              hiding (readFile)
-import           Selector             (Selector (..), isAttribute, isClass,
+import           Lib                  (Selector (..), isAttribute, isClass,
                                        isId, isPseudoClass, isPseudoElement,
-                                       isType, prettyPrint)
+                                       isType, parseCss, prettyPrint)
+import           Prelude              hiding (readFile)
 import           System.Environment   (getArgs)
 
 
