@@ -15,7 +15,8 @@ module Selector
 
 import           Control.Applicative  ((<|>))
 import           Data.Attoparsec.Text (Parser, char, inClass, notInClass,
-                                       satisfy, string, takeWhile, takeWhile1)
+                                       satisfy, skipWhile, string, takeWhile,
+                                       takeWhile1)
 import           Data.Monoid          ((<>))
 import           Data.Text            (Text, cons, unpack)
 import           Data.Text.IO         (putStrLn)
@@ -152,12 +153,21 @@ universalSelector =
 pseudoElement :: Parser Selector
 pseudoElement = do
     string "::"
-    name <- takeAllowedChars
+    name <- takeWhile1 (inClass allowedChars)
     return $ PseudoElement name
 
 
 pseudoClass :: Parser Selector
 pseudoClass = do
     char ':'
+    name <- withBrackets <|> takeAllowedChars
+    return $ PseudoClass name 
+
+
+withBrackets :: Parser Text
+withBrackets = do
     name <- takeAllowedChars
-    return $ PseudoClass name
+    char '('
+    skipWhile ((/=) ')')
+    char ')'
+    return $ name <> "()"

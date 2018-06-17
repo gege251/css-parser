@@ -38,3 +38,13 @@ spec =
             ("*" :: Text)
                 ~> selector `shouldParse`
                     ( UniversalSelector )
+
+        it "should parse pseudo class selector" $
+            (":nth-child(1)" :: Text)
+                ~> selector `shouldParse`
+                    ( PseudoClass "nth-child()" )
+
+        it "should parse pseudo element selector" $
+            ("::-moz-progress-bar" :: Text)
+                ~> selector `shouldParse`
+                    ( PseudoElement "-moz-progress-bar" )
