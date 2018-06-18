@@ -2,18 +2,20 @@
 
 module Main where
 
-import           Control.Applicative  (many, (*>), (<|>))
-import           Control.Monad        (mapM, mapM_)
-import           Data.Attoparsec.Text (Parser, char, parseOnly, string)
-import           Data.List            (nub)
-import           Data.Text            (Text, pack)
-import           Data.Text.IO         (readFile)
-import           Grep                 (GrepResult, grepAt)
-import           Lib                  (Selector (..), isAttribute, isClass,
-                                       isId, isPseudoClass, isPseudoElement,
-                                       isType, parseCss, prettify, prettyPrint)
-import           Prelude              hiding (readFile)
-import           System.Environment   (getArgs)
+import           Control.Applicative              (many, (*>), (<|>))
+import           Control.Monad                    (mapM, mapM_)
+import           Data.Attoparsec.ByteString.Char8 (Parser, char, parseOnly,
+                                                   string)
+import           Data.ByteString.Char8            (ByteString, pack, readFile)
+import           Data.List                        (nub)
+import           Grep                             (GrepResult, grepAt)
+import           Lib                              (Selector (..), isAttribute,
+                                                   isClass, isId, isPseudoClass,
+                                                   isPseudoElement, isType,
+                                                   parseCss, prettify,
+                                                   prettyPrint)
+import           Prelude                          hiding (readFile)
+import           System.Environment               (getArgs)
 
 
 main :: IO ()
@@ -115,7 +117,7 @@ parseOptions options =
 
 optionsParser :: Parser [ Option ]
 optionsParser =
-    char '-' *> many optionParser
+    char '-' *> many optionParser <|> string "--" *> return []
 
 
 optionParser :: Parser Option

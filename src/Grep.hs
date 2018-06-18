@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Grep (GrepResult, grepAt) where
+module Grep (GrepResult, grepAt, grep) where
 
+import           Data.ByteString.Char8  (ByteString, count, pack, readFile)
+import           Data.ByteString.Search (split)
+import           Prelude                hiding (readFile, try)
+import           System.Directory       (doesDirectoryExist, doesFileExist,
+                                         listDirectory)
 import           System.IO.Error
-import           Data.Text         (Text, count, pack, splitOn)
-import           Data.Text.IO      (readFile)
-import           Prelude           hiding (readFile, try)
-import           System.Directory  (doesDirectoryExist, doesFileExist,
-                                    listDirectory)
 
 
 type GrepResult = ( FileName , [ Int ] )
@@ -15,7 +15,7 @@ type GrepResult = ( FileName , [ Int ] )
 type FileName = String
 
 
-grepAt :: Text -> String -> IO (Either String [ GrepResult ])
+grepAt :: ByteString -> String -> IO (Either String [ GrepResult ])
 grepAt query path = do
     fs <- getFileSystemAt path
     case fs of
@@ -23,7 +23,7 @@ grepAt query path = do
         Right fileSystem -> Right <$> grepFileSystem query fileSystem
 
 
-grepFileSystem :: Text -> FileSystem -> IO [ GrepResult ]
+grepFileSystem :: ByteString -> FileSystem -> IO [ GrepResult ]
 grepFileSystem query fs =
     case fs of
         File file -> do
@@ -37,7 +37,7 @@ grepFileSystem query fs =
             return $ concat results
 
 
-grepFile :: Text -> FileName -> IO [ Int ]
+grepFile :: ByteString -> FileName -> IO [ Int ]
 grepFile query source = do
     fileContent <- tryIOError (readFile source)
     case fileContent of
@@ -45,14 +45,14 @@ grepFile query source = do
         Right content -> return $ grep query content
 
 
-grep :: Text -> Text -> [ Int ]
+grep :: ByteString -> ByteString -> [ Int ]
 grep query content =
     let
         results =
-            init (splitOn query content)
+            init (split query content)
 
         lineDifferences =
-            map (count "\n") results
+            map (count '\n') results
     in
         (reverse . init) (foldl (\x y -> (y + head x) : x) [1] lineDifferences)
 
