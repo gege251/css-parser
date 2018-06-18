@@ -3,18 +3,18 @@
 module Main where
 
 import           Control.Applicative              (many, (*>), (<|>))
-import           Control.Monad                    (mapM, mapM_)
 import           Data.Attoparsec.ByteString.Char8 (Parser, char, parseOnly,
                                                    string)
-import           Data.ByteString.Char8            (ByteString, pack, readFile)
+import           Data.ByteString.Char8            (pack)
 import           Data.List                        (nub)
-import           Grep                             (GrepResult, grepAt)
-import           Lib                              (Selector (..), isAttribute,
+import           Lib                              (filterResults, grepSelectors,
+                                                   parseCssFile,
+                                                   printGrepResults,
+                                                   printSelectorList,
+                                                   transposeGrepResults)
+import           Selector                         (Selector (..), isAttribute,
                                                    isClass, isId, isPseudoClass,
-                                                   isPseudoElement, isType,
-                                                   parseCss, prettify,
-                                                   prettyPrint)
-import           Prelude                          hiding (readFile)
+                                                   isPseudoElement, isType)
 import           System.Environment               (getArgs)
 
 
@@ -43,44 +43,11 @@ main = do
                     grepResults <- grepSelectors grepTarget filtered
                     case grepResults of
                         Left err      -> putStrLn err
-                        Right results -> printGrepResults results
+                        Right results -> (printGrepResults . filterResults . transposeGrepResults) results
 
         otherwise ->
             return ()
 
-
-parseCssFile :: String -> IO (Either String [ Selector ])
-parseCssFile cssFile =
-    readFile cssFile >>= return . parseCss
-
-
-printSelectorList :: Either String [ Selector ] -> IO ()
-printSelectorList results =
-    case results of
-        Left err        -> print err
-        Right selectors -> mapM_ prettyPrint selectors
-
-
-printGrepResults :: [( Selector, [ GrepResult ] )] -> IO ()
-printGrepResults results =
-    let
-        printPerGrepResult ( filename, lineNums ) =
-            putStrLn $ "    " ++ filename ++ (show lineNums)
-
-        printPerSelector ( selector, grepResult ) = do
-            prettyPrint selector
-            mapM_ printPerGrepResult grepResult
-    in
-        mapM_ printPerSelector results
-
-
-grepSelectors :: String -> Either String [ Selector ] -> IO (Either String [( Selector, [ GrepResult ] )])
-grepSelectors path eitherSelectors =
-    case eitherSelectors of
-        Left err -> return $ Left err
-        Right selectors -> do
-            grepResults <- mapM ((flip grepAt path) . prettify) selectors
-            return $ fmap (zip selectors) $ sequence grepResults
 
 
 -- OPTIONS

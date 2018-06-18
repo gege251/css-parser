@@ -6,6 +6,7 @@ import           CssDocumentSpec
 import           GrepSpec
 import           Selector
 import           SelectorSpec
+import           LibSpec
 import           Test.Hspec
 
 
@@ -15,5 +16,6 @@ main = do
         SelectorSpec.spec
         CssDocumentSpec.spec
         GrepSpec.spec
+        LibSpec.spec
 
 

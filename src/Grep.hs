@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Grep (GrepResult, grepAt, grep) where
+module Grep (GrepResult, FileName, Query, grepAt, grep) where
 
 import           Data.ByteString.Char8  (ByteString, count, pack, readFile)
 import           Data.ByteString.Search (split)
@@ -10,39 +10,41 @@ import           System.Directory       (doesDirectoryExist, doesFileExist,
 import           System.IO.Error
 
 
-type GrepResult = ( FileName , [ Int ] )
+type GrepResult = ( FileName, [( Query, [ Int ]) ])
 
 type FileName = String
 
+type Query = ByteString
 
-grepAt :: ByteString -> String -> IO (Either String [ GrepResult ])
-grepAt query path = do
+
+grepAt :: String -> [ Query ] -> IO (Either String [ GrepResult ])
+grepAt path queries = do
     fs <- getFileSystemAt path
     case fs of
         Left err         -> return $ Left err
-        Right fileSystem -> Right <$> grepFileSystem query fileSystem
+        Right fileSystem -> Right <$> grepFileSystem queries fileSystem
 
 
-grepFileSystem :: ByteString -> FileSystem -> IO [ GrepResult ]
-grepFileSystem query fs =
+grepFileSystem :: [ Query ] -> FileSystem -> IO [ GrepResult ]
+grepFileSystem queries fs =
     case fs of
         File file -> do
-            result <- grepFile query file
+            result <- grepFile queries file
             if length result == 0
                 then return []
                 else return [ (file, result) ]
 
         Directory _ children -> do
-            results <- mapM (grepFileSystem query) children
+            results <- mapM (grepFileSystem queries) children
             return $ concat results
 
 
-grepFile :: ByteString -> FileName -> IO [ Int ]
-grepFile query source = do
+grepFile :: [ Query ] -> FileName -> IO [ ( ByteString, [ Int ] ) ]
+grepFile queries source = do
     fileContent <- tryIOError (readFile source)
     case fileContent of
         Left err      -> return []
-        Right content -> return $ grep query content
+        Right content -> return $ zip queries $ map (flip grep content) queries
 
 
 grep :: ByteString -> ByteString -> [ Int ]
