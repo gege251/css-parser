@@ -2,50 +2,69 @@
 
 module Options where
 
-import           Control.Applicative              (some, (*>), (<|>))
-import           Data.Attoparsec.ByteString.Char8 (Parser, char, parseOnly,
-                                                   string)
-import           Data.ByteString.Char8            (pack)
-import           Selector                         (Selector (..), isAttribute,
-                                                   isClass, isId, isPseudoClass,
-                                                   isPseudoElement, isType)
+import           Control.Applicative   (some, (*>), (<|>))
+import           Data.ByteString.Char8 (pack)
+import           Data.Maybe            (catMaybes)
+import           Data.Semigroup        ((<>))
+import           Options.Applicative
+import           Selector              (Selector (..), isAttribute, isClass,
+                                        isId, isPseudoClass, isPseudoElement,
+                                        isType)
 
 
-data Option
-    = Classes
-    | Types
-    | Ids
-    | Attributes
-    | PseudoElements
-    | PseudoClasses
+data Options = Options
+    { cssPath              :: String
+    , sourcePath           :: String
+    , filterClasses        :: Bool
+    , filterTypes          :: Bool
+    , filterIds            :: Bool
+    , filterAttributes     :: Bool
+    , filterPseudoElements :: Bool
+    , filterPseudoClasses  :: Bool
+    }
+    deriving Show
 
 
-parseOptions :: String -> Either String [ Option ]
-parseOptions options =
-    parseOnly optionsParser (pack options)
+options :: Parser Options
+options = Options
+    <$> strOption
+        ( long "file"
+        <> short 'f'
+        <> metavar "FILE"
+        <> help "Input file for the css parser" )
+    <*> strOption
+        ( long "source"
+        <> short 's'
+        <> value ""
+        <> metavar "PATH"
+        <> help "Source file path to grep in" )
+    <*> switch
+        ( short 'c'
+        <> help "Filter for classes" )
+    <*> switch
+        ( short 't'
+        <> help "Filter for types" )
+    <*> switch
+        ( short 'i'
+        <> help "Filter for ids" )
+    <*> switch
+        ( short 'a'
+        <> help "Filter for attributes" )
+    <*> switch
+        ( short 'e'
+        <> help "Filter for pseudo-elements" )
+    <*> switch
+        ( short 'p'
+        <> help "Filter for pseudo-classes" )
 
 
-optionsParser :: Parser [ Option ]
-optionsParser =
-    char '-' *> some optionParser <|> string "--" *> return []
-
-
-optionParser :: Parser Option
-optionParser =
-    char 'c'        *> pure Classes
-    <|> char 't'    *> pure Types
-    <|> char 'i'    *> pure Ids
-    <|> char 'a'    *> pure Attributes
-    <|> string "pe" *> pure PseudoElements
-    <|> string "pc" *> pure PseudoClasses
-
-
-isSelector :: Option -> Selector -> Bool
-isSelector option =
-    case option of
-        Classes        -> isClass
-        Types          -> isType
-        Ids            -> isId
-        Attributes     -> isAttribute
-        PseudoElements -> isPseudoElement
-        PseudoClasses  -> isPseudoClass
+toPredicateList :: Options -> [ ( Selector -> Bool ) ]
+toPredicateList options =
+    catMaybes
+        [ if filterClasses options        then Just isClass         else Nothing
+        , if filterTypes options          then Just isType          else Nothing
+        , if filterIds options            then Just isId            else Nothing
+        , if filterAttributes options     then Just isAttribute     else Nothing
+        , if filterPseudoElements options then Just isPseudoElement else Nothing
+        , if filterPseudoClasses options  then Just isPseudoClass   else Nothing
+        ]

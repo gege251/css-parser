@@ -2,55 +2,47 @@
 
 module Main where
 
-import           Data.List          (nub)
-import           Lib                (filterResults, grepSelectors, orFilter,
-                                     parseCssFile, printGrepResults,
-                                     printSelectorList, transposeGrepResults)
-import           Options            (Option, isSelector, parseOptions)
-import           Selector           (Selector)
-import           System.Environment (getArgs)
+import           Data.List           (nub)
+import           Data.Semigroup      ((<>))
+import           Lib                 (filterResults, grepSelectors, orFilter,
+                                      parseCssFile, printGrepResults,
+                                      printSelectorList, transposeGrepResults)
+import           Options             (Options, cssPath, options, sourcePath,
+                                      toPredicateList)
+import           Options.Applicative (execParser, fullDesc, header, helper,
+                                      info, progDesc, (<**>))
+import           Selector            (Selector)
+import           System.Environment  (getArgs)
 
 
 main :: IO ()
-main = do
-    args <- getArgs
-    case args of
-        (path : []) -> do
-            results <- parseCssFile path
-            printSelectorList (filterSelectors [] <$> results)
+main = runApp =<< execParser opts
+  where
+    opts = info (options <**> helper)
+      ( fullDesc
+     <> progDesc "Grep for css selectors in your project folder"
+     <> header "css-parser - CSS parser and grepper" )
 
-        (path : args : []) -> do
-            results <- parseCssFile path
-            let eitherOptions = parseOptions args
-            case eitherOptions of
-                Left err      -> putStrLn "Invalid arguments"
-                Right options -> printSelectorList (filterSelectors options <$> results)
 
-        (path : args : grepTarget : []) -> do
-            results <- parseCssFile path
-            let eitherOptions = parseOptions args
-            case eitherOptions of
-                Left err      -> putStrLn "Invalid arguments"
-                Right options -> do
-                    let filtered = filterSelectors options <$> results
-                    grepResults <- grepSelectors grepTarget filtered
-                    case grepResults of
-                        Left err      -> putStrLn err
-                        Right results -> (printGrepResults . filterResults . transposeGrepResults) results
-
-        _ ->
-            return ()
+runApp :: Options -> IO ()
+runApp options = do
+    cssSelectors <- parseCssFile (cssPath options)
+    if sourcePath options == "" then
+        printSelectorList (filterSelectors options <$> cssSelectors)
+    else do
+        let filtered = filterSelectors options <$> cssSelectors
+        grepResults <- grepSelectors (sourcePath options) filtered
+        case grepResults of
+            Left err      -> putStrLn err
+            Right results -> (printGrepResults . filterResults . transposeGrepResults) results
 
 
 
 -- OPTIONS
 
 
-filterSelectors :: [ Option ] -> [ Selector ] -> [ Selector ]
-filterSelectors [] selectors            = selectors
-filterSelectors selectorTypes selectors =
-    let
-        predicates =
-            map isSelector selectorTypes
-    in
-        (nub . filter (orFilter predicates)) selectors
+filterSelectors :: Options -> [ Selector ] -> [ Selector ]
+filterSelectors options selectors =
+    case toPredicateList options of
+        []         -> nub selectors
+        predicates -> (nub . filter (orFilter predicates)) selectors
