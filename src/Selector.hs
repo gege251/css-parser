@@ -3,7 +3,7 @@
 module Selector
     ( Selector (..)
     , selector
-    , prettify
+    , toPrettyName
     , toName
     , prettyPrint
     , isType
@@ -36,11 +36,11 @@ data Selector
 
 prettyPrint :: Selector -> IO ()
 prettyPrint =
-    putStrLn . prettify
+    putStrLn . toPrettyName
 
 
-prettify :: Selector -> ByteString
-prettify selector =
+toPrettyName :: Selector -> ByteString
+toPrettyName selector =
         case selector of
             TypeSelector text      -> text
             IdSelector text        -> "#" <> text

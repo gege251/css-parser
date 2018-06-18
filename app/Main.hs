@@ -2,20 +2,13 @@
 
 module Main where
 
-import           Control.Applicative              (many, (*>), (<|>))
-import           Data.Attoparsec.ByteString.Char8 (Parser, char, parseOnly,
-                                                   string)
-import           Data.ByteString.Char8            (pack)
-import           Data.List                        (nub)
-import           Lib                              (filterResults, grepSelectors,
-                                                   parseCssFile,
-                                                   printGrepResults,
-                                                   printSelectorList,
-                                                   transposeGrepResults)
-import           Selector                         (Selector (..), isAttribute,
-                                                   isClass, isId, isPseudoClass,
-                                                   isPseudoElement, isType)
-import           System.Environment               (getArgs)
+import           Data.List          (nub)
+import           Lib                (filterResults, grepSelectors, orFilter,
+                                     parseCssFile, printGrepResults,
+                                     printSelectorList, transposeGrepResults)
+import           Options            (Option, isSelector, parseOptions)
+import           Selector           (Selector)
+import           System.Environment (getArgs)
 
 
 main :: IO ()
@@ -45,7 +38,7 @@ main = do
                         Left err      -> putStrLn err
                         Right results -> (printGrepResults . filterResults . transposeGrepResults) results
 
-        otherwise ->
+        _ ->
             return ()
 
 
@@ -61,48 +54,3 @@ filterSelectors selectorTypes selectors =
             map isSelector selectorTypes
     in
         (nub . filter (orFilter predicates)) selectors
-
-
-orFilter :: [ a -> Bool ] -> a -> Bool
-orFilter fs a =
-    foldl (\acc f -> f a || acc) False fs
-
-
-data Option
-    = Classes
-    | Types
-    | Ids
-    | Attributes
-    | PseudoElements
-    | PseudoClasses
-
-
-parseOptions :: String -> Either String [ Option ]
-parseOptions options =
-    parseOnly optionsParser (pack options)
-
-
-optionsParser :: Parser [ Option ]
-optionsParser =
-    char '-' *> many optionParser <|> string "--" *> return []
-
-
-optionParser :: Parser Option
-optionParser =
-    char 'c'        *> pure Classes
-    <|> char 't'    *> pure Types
-    <|> char 'i'    *> pure Ids
-    <|> char 'a'    *> pure Attributes
-    <|> string "pe" *> pure PseudoElements
-    <|> string "pc" *> pure PseudoClasses
-
-
-isSelector :: Option -> Selector -> Bool
-isSelector option =
-    case option of
-        Classes        -> isClass
-        Types          -> isType
-        Ids            -> isId
-        Attributes     -> isAttribute
-        PseudoElements -> isPseudoElement
-        PseudoClasses  -> isPseudoClass

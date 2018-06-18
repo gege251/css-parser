@@ -7,6 +7,7 @@ module Lib
     , filterResults
     , transposeGrepResults
     , grepSelectors
+    , orFilter
     ) where
 
 import           CssDocument           (parseCss)
@@ -14,7 +15,7 @@ import           Data.ByteString.Char8 (readFile, unpack)
 import           Data.List             (groupBy, sortBy)
 import           Grep                  (FileName, GrepResult, Query, grepAt)
 import           Prelude               hiding (readFile)
-import           Selector              (Selector (..), prettify, prettyPrint, toName)
+import           Selector              (Selector (..), toPrettyName, prettyPrint, toName)
 import           System.Console.ANSI   (Color (..), ColorIntensity (..),
                                         ConsoleLayer (..),
                                         SGR (Reset, SetColor), setSGR)
@@ -94,3 +95,8 @@ grepSelectors path eitherSelectors =
         Right selectors -> do
             grepResults <- grepAt path (map toName selectors)
             return $ grepResults
+
+
+orFilter :: [ a -> Bool ] -> a -> Bool
+orFilter fs a =
+    foldl (\acc f -> f a || acc) False fs
