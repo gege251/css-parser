@@ -14,7 +14,7 @@ import           Data.ByteString.Char8 (readFile, unpack)
 import           Data.List             (groupBy, sortBy)
 import           Grep                  (FileName, GrepResult, Query, grepAt)
 import           Prelude               hiding (readFile)
-import           Selector              (Selector (..), prettify, prettyPrint)
+import           Selector              (Selector (..), prettify, prettyPrint, toName)
 import           System.Console.ANSI   (Color (..), ColorIntensity (..),
                                         ConsoleLayer (..),
                                         SGR (Reset, SetColor), setSGR)
@@ -92,5 +92,5 @@ grepSelectors path eitherSelectors =
     case eitherSelectors of
         Left err -> return $ Left err
         Right selectors -> do
-            grepResults <- grepAt path (map prettify selectors)
+            grepResults <- grepAt path (map toName selectors)
             return $ grepResults

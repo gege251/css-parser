@@ -4,6 +4,7 @@ module Selector
     ( Selector (..)
     , selector
     , prettify
+    , toName
     , prettyPrint
     , isType
     , isId
@@ -48,6 +49,18 @@ prettify selector =
             UniversalSelector      -> "*"
             PseudoElement text     -> "::" <> text
             PseudoClass text       -> ":" <> text
+
+
+toName :: Selector -> ByteString
+toName selector =
+        case selector of
+            TypeSelector text      -> text
+            IdSelector text        -> text
+            ClassSelector text     -> text
+            AttributeSelector text -> text <> "]"
+            UniversalSelector      -> "*"
+            PseudoElement text     -> text
+            PseudoClass text       -> text
 
 
 
