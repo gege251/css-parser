@@ -3,7 +3,8 @@
 module Selector
     ( Selector (..)
     , selector
-    , prettify
+    , toPrettyName
+    , toName
     , prettyPrint
     , isType
     , isId
@@ -13,33 +14,33 @@ module Selector
     , isPseudoElement
     ) where
 
-import           Control.Applicative  ((<|>))
-import           Data.Attoparsec.Text (Parser, char, inClass, satisfy,
-                                       skipWhile, string, takeWhile, takeWhile1)
-import           Data.Monoid          ((<>))
-import           Data.Text            (Text, cons)
-import           Data.Text.IO         (putStrLn)
-import           Prelude              hiding (putStrLn, takeWhile)
+import           Control.Applicative              ((<|>))
+import           Data.Attoparsec.ByteString.Char8 (Parser, char, inClass,
+                                                   satisfy, skipWhile, string,
+                                                   takeWhile, takeWhile1)
+import           Data.ByteString.Char8            (ByteString, cons, putStrLn)
+import           Data.Monoid                      ((<>))
+import           Prelude                          hiding (putStrLn, takeWhile)
 
 
 data Selector
-    = TypeSelector Text
-    | IdSelector Text
-    | ClassSelector Text
-    | AttributeSelector Text
+    = TypeSelector ByteString
+    | IdSelector ByteString
+    | ClassSelector ByteString
+    | AttributeSelector ByteString
     | UniversalSelector
-    | PseudoElement Text
-    | PseudoClass Text
+    | PseudoElement ByteString
+    | PseudoClass ByteString
     deriving (Eq, Show)
 
 
 prettyPrint :: Selector -> IO ()
 prettyPrint =
-    putStrLn . prettify
+    putStrLn . toPrettyName
 
 
-prettify :: Selector -> Text
-prettify selector =
+toPrettyName :: Selector -> ByteString
+toPrettyName selector =
         case selector of
             TypeSelector text      -> text
             IdSelector text        -> "#" <> text
@@ -48,6 +49,18 @@ prettify selector =
             UniversalSelector      -> "*"
             PseudoElement text     -> "::" <> text
             PseudoClass text       -> ":" <> text
+
+
+toName :: Selector -> ByteString
+toName selector =
+        case selector of
+            TypeSelector text      -> text
+            IdSelector text        -> text
+            ClassSelector text     -> text
+            AttributeSelector text -> text <> "]"
+            UniversalSelector      -> "*"
+            PseudoElement text     -> text
+            PseudoClass text       -> text
 
 
 
@@ -98,7 +111,7 @@ allowedFirstChars =
     "_a-zA-Z"
 
 
-takeAllowedChars :: Parser Text
+takeAllowedChars :: Parser ByteString
 takeAllowedChars = do
     head <- satisfy (inClass allowedFirstChars)
     rest <- takeWhile (inClass allowedChars)
@@ -163,7 +176,7 @@ pseudoClass = do
     return $ PseudoClass name
 
 
-withBrackets :: Parser Text
+withBrackets :: Parser ByteString
 withBrackets = do
     name <- takeAllowedChars
     char '('

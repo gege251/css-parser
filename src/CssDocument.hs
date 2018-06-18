@@ -7,16 +7,18 @@ module CssDocument
     , parseCss
     ) where
 
-import           Control.Applicative  (many, (*>), (<*), (<|>))
-import           Control.Monad        (void)
-import           Data.Attoparsec.Text (Parser, anyChar, char, manyTill,
-                                       notInClass, parseOnly, sepBy, skipMany,
-                                       skipSpace, skipWhile, space, string)
-import           Data.Text            (Text)
-import           Selector             (Selector (..), selector)
+import           Control.Applicative              (many, (*>), (<*), (<|>))
+import           Control.Monad                    (void)
+import           Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char,
+                                                   manyTill, notInClass,
+                                                   parseOnly, sepBy, skipMany,
+                                                   skipSpace, skipWhile, space,
+                                                   string)
+import           Data.ByteString                  (ByteString)
+import           Selector                         (Selector (..), selector)
 
 
-parseCss :: Text -> Either String [ Selector ]
+parseCss :: ByteString -> Either String [ Selector ]
 parseCss css = do
     parseOnly document css
 
@@ -50,7 +52,7 @@ declarationHeader =
     selector `sepBy` selectorCombinators
 
 
-selectorCombinators :: Parser Text
+selectorCombinators :: Parser ByteString
 selectorCombinators =
     string "," <* skipSpace
     <|> skipSpace *> string ">" <* skipSpace
