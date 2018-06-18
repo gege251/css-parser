@@ -25,6 +25,7 @@ dependencies:
 - bytestring
 - stringsearch
 - directory >= 1.3.0.2 && < 5
+- ansi-terminal
 
 library:
   source-dirs: src

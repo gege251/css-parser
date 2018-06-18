@@ -15,6 +15,9 @@ import           Data.List             (groupBy, sortBy)
 import           Grep                  (FileName, GrepResult, Query, grepAt)
 import           Prelude               hiding (readFile)
 import           Selector              (Selector (..), prettify, prettyPrint)
+import           System.Console.ANSI   (Color (..), ColorIntensity (..),
+                                        ConsoleLayer (..),
+                                        SGR (Reset, SetColor), setSGR)
 
 
 parseCssFile :: String -> IO (Either String [ Selector ])
@@ -36,7 +39,9 @@ printGrepResults results =
             putStrLn $ "    " ++ filename ++ (show lineNums)
 
         printPerSelector ( selector, grepResult ) = do
+            setSGR [ SetColor Foreground Vivid Yellow ]
             putStrLn $ unpack selector
+            setSGR [ Reset ]
             mapM_ printPerGrepResult grepResult
     in
         mapM_ printPerSelector results
