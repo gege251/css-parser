@@ -4,11 +4,11 @@ module Main where
 
 import           Data.List           (nub)
 import           Data.Semigroup      ((<>))
-import           Lib                 (filterResults, grepSelectors, orFilter,
-                                      parseCssFile, printGrepResults,
+import           Lib                 (GrepResult, filterResults, grepSelectors,
+                                      orFilter, parseCssFile, printGrepResults,
                                       printSelectorList, transposeGrepResults)
 import           Options             (Options, cssPath, options, sourcePath,
-                                      toPredicateList)
+                                      toPredicateList, unusedOnly)
 import           Options.Applicative (execParser, fullDesc, header, helper,
                                       info, progDesc, (<**>))
 import           Selector            (Selector)
@@ -33,15 +33,24 @@ runApp options = do
         grepResults <- grepSelectors (sourcePath options) filtered
         case grepResults of
             Left err      -> putStrLn err
-            Right results -> (printGrepResults . filterResults . transposeGrepResults) results
+            Right results -> grepPrint options results
 
 
 
 -- OPTIONS
 
 
+grepPrint :: Options -> [ GrepResult ] -> IO ()
+grepPrint options =
+    printGrepResults . (filterResults (unusedOnly options)) . transposeGrepResults
+
+
 filterSelectors :: Options -> [ Selector ] -> [ Selector ]
-filterSelectors options selectors =
-    case toPredicateList options of
-        []         -> nub selectors
-        predicates -> (nub . filter (orFilter predicates)) selectors
+filterSelectors options =
+    let
+        selectorTypeFilter =
+            case toPredicateList options of
+                []         -> id
+                predicates -> filter (orFilter predicates)
+    in
+        selectorTypeFilter . nub

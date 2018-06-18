@@ -20,6 +20,7 @@ data Options = Options
     , filterAttributes     :: Bool
     , filterPseudoElements :: Bool
     , filterPseudoClasses  :: Bool
+    , unusedOnly           :: Bool
     }
     deriving Show
 
@@ -32,11 +33,11 @@ options = Options
         <> metavar "FILE"
         <> help "Input file for the css parser" )
     <*> strOption
-        ( long "source"
-        <> short 's'
+        ( long "grep"
+        <> short 'g'
         <> value ""
         <> metavar "PATH"
-        <> help "Source file path to grep in" )
+        <> help "Path to the project root (or src) to grep in" )
     <*> switch
         ( short 'c'
         <> help "Filter for classes" )
@@ -55,6 +56,10 @@ options = Options
     <*> switch
         ( short 'p'
         <> help "Filter for pseudo-classes" )
+    <*> switch
+        ( short 'u'
+        <> long "unused"
+        <> help "Display unused selectors only (when grep option is set)" )
 
 
 toPredicateList :: Options -> [ ( Selector -> Bool ) ]

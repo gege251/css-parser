@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lib
-    ( parseCssFile
+    ( GrepResult
+    , PrintableGrepResult
+    , parseCssFile
     , printSelectorList
     , printGrepResults
     , filterResults
@@ -21,6 +23,9 @@ import           System.Console.ANSI   (Color (..), ColorIntensity (..),
                                         SGR (Reset, SetColor), setSGR)
 
 
+type PrintableGrepResult = (Query, [ (FileName, [ Int ]) ])
+
+
 parseCssFile :: String -> IO (Either String [ Selector ])
 parseCssFile cssFile =
     readFile cssFile >>= return . parseCss
@@ -33,8 +38,8 @@ printSelectorList results =
         Right selectors -> mapM_ prettyPrint selectors
 
 
-printGrepResults :: [(Query, [( FileName, [ Int ] )] )] -> IO ()
-printGrepResults results =
+printGrepResults :: [ PrintableGrepResult ] -> IO ()
+printGrepResults =
     let
         printPerGrepResult ( filename, lineNums ) =
             putStrLn $ "    " ++ filename ++ (show lineNums)
@@ -45,7 +50,7 @@ printGrepResults results =
             setSGR [ Reset ]
             mapM_ printPerGrepResult grepResult
     in
-        mapM_ printPerSelector results
+        mapM_ printPerSelector
 
 
 transposeGrepResults :: [ (FileName, [ (Query, [ Int ]) ]) ] -> [ (Query, [ (FileName, [ Int ]) ]) ]
@@ -78,14 +83,24 @@ groupBySnd =
         (map pullOutB) . groupByB . sortByB
 
 
-filterResults :: [ (Query, [ (FileName, [ Int ]) ]) ] -> [ (Query, [ (FileName, [ Int ]) ]) ]
-filterResults =
-    map (\(q, results) -> (q, filterResultsPerFile results))
+filterResults :: Bool -> [ PrintableGrepResult ] -> [ PrintableGrepResult ]
+filterResults unusedOnly =
+    let
+        filterEmpty :: [ (FileName, [ Int ]) ] -> [ (FileName, [ Int ]) ]
+        filterEmpty =
+            filter (\ (filename, lineNums) -> length lineNums /= 0)
+
+        emptyFileFilter =
+            map (\ (query, results) -> (query, filterEmpty results))
+
+        unusedSelectorFilter =
+            if unusedOnly
+                then filter (\ (query, files) -> length files == 0)
+                else id
+    in
+        unusedSelectorFilter . emptyFileFilter
 
 
-filterResultsPerFile :: [ (FileName, [ Int ]) ] -> [ (FileName, [ Int ]) ]
-filterResultsPerFile =
-    filter (\(filename, lineNums) -> length lineNums /= 0)
 
 
 grepSelectors :: String -> Either String [ Selector ] -> IO ( Either String [ GrepResult ] )
