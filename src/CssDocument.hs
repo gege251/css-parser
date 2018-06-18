@@ -15,7 +15,7 @@ import           Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char,
                                                    skipSpace, skipWhile, space,
                                                    string)
 import           Data.ByteString                  (ByteString)
-import           Selector                         (Selector (..), selector)
+import           Selector                         (Selector, selector)
 
 
 parseCss :: ByteString -> Either String [ Selector ]

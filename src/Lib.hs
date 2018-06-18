@@ -15,7 +15,7 @@ import           Data.ByteString.Char8 (readFile, unpack)
 import           Data.List             (groupBy, sortBy)
 import           Grep                  (FileName, GrepResult, Query, grepAt)
 import           Prelude               hiding (readFile)
-import           Selector              (Selector (..), toPrettyName, prettyPrint, toName)
+import           Selector              (Selector, prettyPrint, toName)
 import           System.Console.ANSI   (Color (..), ColorIntensity (..),
                                         ConsoleLayer (..),
                                         SGR (Reset, SetColor), setSGR)

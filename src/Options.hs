@@ -2,14 +2,13 @@
 
 module Options where
 
-import           Control.Applicative   (some, (*>), (<|>))
 import           Data.ByteString.Char8 (pack)
 import           Data.Maybe            (catMaybes)
 import           Data.Semigroup        ((<>))
-import           Options.Applicative
-import           Selector              (Selector (..), isAttribute, isClass,
-                                        isId, isPseudoClass, isPseudoElement,
-                                        isType)
+import           Options.Applicative   (Parser, help, long, metavar, short,
+                                        strOption, switch, value)
+import           Selector              (Selector, isAttribute, isClass, isId,
+                                        isPseudoClass, isPseudoElement, isType)
 
 
 data Options = Options

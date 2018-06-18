@@ -12,7 +12,6 @@ import           Options             (Options, cssPath, options, sourcePath,
 import           Options.Applicative (execParser, fullDesc, header, helper,
                                       info, progDesc, (<**>))
 import           Selector            (Selector)
-import           System.Environment  (getArgs)
 
 
 main :: IO ()
