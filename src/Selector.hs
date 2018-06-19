@@ -31,7 +31,7 @@ data Selector
     | UniversalSelector
     | PseudoElement ByteString
     | PseudoClass ByteString
-    deriving (Eq, Show)
+    deriving (Eq, Ord, Show)
 
 
 prettyPrint :: Selector -> IO ()
@@ -57,7 +57,7 @@ toName selector =
             TypeSelector text      -> text
             IdSelector text        -> text
             ClassSelector text     -> text
-            AttributeSelector text -> text <> "]"
+            AttributeSelector text -> text
             UniversalSelector      -> "*"
             PseudoElement text     -> text
             PseudoClass text       -> text

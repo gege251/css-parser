@@ -1,23 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Grep (GrepResult, FileName, Query, grepAt, grep) where
+module Grep (GrepResult, FileName, grepAt, grep) where
 
 import           Data.ByteString.Char8  (ByteString, count, pack, readFile)
 import           Data.ByteString.Search (split)
 import           Prelude                hiding (readFile, try)
+import           Selector               (Selector, toName)
 import           System.Directory       (doesDirectoryExist, doesFileExist,
                                          listDirectory)
 import           System.IO.Error
 
 
-type GrepResult = ( FileName, [( Query, [ Int ]) ])
+type GrepResult = ( FileName, [( Selector, [ Int ]) ])
 
 type FileName = String
 
-type Query = ByteString
 
-
-grepAt :: String -> [ Query ] -> IO (Either String [ GrepResult ])
+grepAt :: String -> [ Selector ] -> IO (Either String [ GrepResult ])
 grepAt path queries = do
     fs <- getFileSystemAt path
     case fs of
@@ -25,7 +24,7 @@ grepAt path queries = do
         Right fileSystem -> Right <$> grepFileSystem queries fileSystem
 
 
-grepFileSystem :: [ Query ] -> FileSystem -> IO [ GrepResult ]
+grepFileSystem :: [ Selector ] -> FileSystem -> IO [ GrepResult ]
 grepFileSystem queries fs =
     case fs of
         File file -> do
@@ -39,7 +38,7 @@ grepFileSystem queries fs =
             return $ concat results
 
 
-grepFile :: [ Query ] -> FileName -> IO [ ( ByteString, [ Int ] ) ]
+grepFile :: [ Selector ] -> FileName -> IO [ ( Selector, [ Int ] ) ]
 grepFile queries source = do
     fileContent <- tryIOError (readFile source)
     case fileContent of
@@ -47,11 +46,11 @@ grepFile queries source = do
         Right content -> return $ zip queries $ map (flip grep content) queries
 
 
-grep :: ByteString -> ByteString -> [ Int ]
+grep :: Selector -> ByteString -> [ Int ]
 grep query content =
     let
         results =
-            init (split query content)
+            init (split (toName query) content)
 
         lineDifferences =
             map (count '\n') results

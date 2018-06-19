@@ -13,9 +13,9 @@ module Lib
     ) where
 
 import           CssDocument           (parseCss)
-import           Data.ByteString.Char8 (readFile, unpack)
+import           Data.ByteString.Char8 (readFile)
 import           Data.List             (groupBy, sortBy)
-import           Grep                  (FileName, GrepResult, Query, grepAt)
+import           Grep                  (FileName, GrepResult, grepAt)
 import           Prelude               hiding (readFile)
 import           Selector              (Selector, prettyPrint, toName)
 import           System.Console.ANSI   (Color (..), ColorIntensity (..),
@@ -23,7 +23,7 @@ import           System.Console.ANSI   (Color (..), ColorIntensity (..),
                                         SGR (Reset, SetColor), setSGR)
 
 
-type PrintableGrepResult = (Query, [ (FileName, [ Int ]) ])
+type PrintableGrepResult = (Selector, [ (FileName, [ Int ]) ])
 
 
 parseCssFile :: String -> IO (Either String [ Selector ])
@@ -46,14 +46,14 @@ printGrepResults =
 
         printPerSelector ( selector, grepResult ) = do
             setSGR [ SetColor Foreground Vivid Yellow ]
-            putStrLn $ unpack selector
+            prettyPrint selector
             setSGR [ Reset ]
             mapM_ printPerGrepResult grepResult
     in
         mapM_ printPerSelector
 
 
-transposeGrepResults :: [ (FileName, [ (Query, [ Int ]) ]) ] -> [ (Query, [ (FileName, [ Int ]) ]) ]
+transposeGrepResults :: [ (FileName, [ (Selector, [Int]) ]) ] -> [ (Selector, [ (FileName, [Int]) ]) ]
 transposeGrepResults =
      groupBySnd . concat . (map flatten)
 
@@ -103,12 +103,12 @@ filterResults unusedOnly =
 
 
 
-grepSelectors :: String -> Either String [ Selector ] -> IO ( Either String [ GrepResult ] )
+grepSelectors :: String -> Either String [Selector] -> IO (Either String [GrepResult])
 grepSelectors path eitherSelectors =
     case eitherSelectors of
         Left err -> return $ Left err
         Right selectors -> do
-            grepResults <- grepAt path (map toName selectors)
+            grepResults <- grepAt path selectors
             return $ grepResults
 
 
