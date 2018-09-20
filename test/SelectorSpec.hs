@@ -14,7 +14,7 @@ spec =
         it "should parse class selector" $
             (".test-class" :: ByteString)
                 ~> selector `shouldParse`
-                    ( ClassSelector "test-class" )
+                    ClassSelector "test-class" 
 
         it "should fail on ill named selector" $
                 selector `shouldFailOn` (".-class" :: ByteString)
@@ -22,29 +22,29 @@ spec =
         it "should parse type selector" $
             ("div" :: ByteString)
                 ~> selector `shouldParse`
-                    ( TypeSelector "div" )
+                    TypeSelector "div" 
 
         it "should parse id selector" $
             ("#test_id" :: ByteString)
                 ~> selector `shouldParse`
-                    ( IdSelector "test_id" )
+                    IdSelector "test_id" 
 
         it "should parse attribute selector" $
             ("[href*=\"example\"]" :: ByteString)
                 ~> selector `shouldParse`
-                    ( AttributeSelector "href*=\"example\"" )
+                    AttributeSelector "href*=\"example\"" 
 
         it "should parse universal selector" $
             ("*" :: ByteString)
                 ~> selector `shouldParse`
-                    ( UniversalSelector )
+                    UniversalSelector 
 
         it "should parse pseudo class selector" $
             (":nth-child(1)" :: ByteString)
                 ~> selector `shouldParse`
-                    ( PseudoClass "nth-child()" )
+                    PseudoClass "nth-child()" 
 
         it "should parse pseudo element selector" $
             ("::-moz-progress-bar" :: ByteString)
                 ~> selector `shouldParse`
-                    ( PseudoElement "-moz-progress-bar" )
+                    PseudoElement "-moz-progress-bar" 

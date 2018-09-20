@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Main where
 
 import           CssDocumentSpec
@@ -11,7 +9,7 @@ import           Test.Hspec
 
 
 main :: IO ()
-main = do
+main =
     hspec $ do
         SelectorSpec.spec
         CssDocumentSpec.spec

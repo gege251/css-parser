@@ -69,44 +69,44 @@ toName selector =
 
 isType :: Selector -> Bool
 isType (TypeSelector _) = True
-isType otherwise        = False
+isType _                = False
 
 
 isId :: Selector -> Bool
 isId (IdSelector _) = True
-isId otherwise      = False
+isId _              = False
 
 
 isClass :: Selector -> Bool
 isClass (ClassSelector _) = True
-isClass otherwise         = False
+isClass _                 = False
 
 
 isAttribute :: Selector -> Bool
 isAttribute (AttributeSelector _) = True
-isAttribute otherwise             = False
+isAttribute _                     = False
 
 
 isPseudoElement :: Selector -> Bool
 isPseudoElement (PseudoElement _) = True
-isPseudoElement otherwise         = False
+isPseudoElement _                 = False
 
 
 isPseudoClass :: Selector -> Bool
 isPseudoClass (PseudoClass _) = True
-isPseudoClass otherwise       = False
+isPseudoClass _               = False
 
 
 
 -- PARSERS
 
 
-allowedChars :: [ Char ]
+allowedChars :: String
 allowedChars =
     "_a-zA-Z0-9-"
 
 
-allowedFirstChars :: [ Char ]
+allowedFirstChars :: String
 allowedFirstChars =
     "_a-zA-Z"
 
@@ -130,9 +130,8 @@ selector =
 
 
 typeSelector :: Parser Selector
-typeSelector = do
-    name <- takeAllowedChars
-    return $ TypeSelector name
+typeSelector =
+    TypeSelector <$> takeAllowedChars
 
 
 idSelector :: Parser Selector
@@ -152,7 +151,7 @@ classSelector = do
 attributeSelector :: Parser Selector
 attributeSelector = do
     char '['
-    name <- takeWhile1 ((/=) ']')
+    name <- takeWhile1 (']' /=)
     char ']'
     return $ AttributeSelector name
 
@@ -180,6 +179,6 @@ withBrackets :: Parser ByteString
 withBrackets = do
     name <- takeAllowedChars
     char '('
-    skipWhile ((/=) ')')
+    skipWhile (')' /=)
     char ')'
     return $ name <> "()"

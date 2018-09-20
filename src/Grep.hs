@@ -33,9 +33,8 @@ grepFileSystem queries fs =
                 then return []
                 else return [ (file, result) ]
 
-        Directory _ children -> do
-            results <- mapM (grepFileSystem queries) children
-            return $ concat results
+        Directory _ children ->
+            concat <$> mapM (grepFileSystem queries) children
 
 
 grepFile :: [ Selector ] -> FileName -> IO [ ( Selector, [ Int ] ) ]

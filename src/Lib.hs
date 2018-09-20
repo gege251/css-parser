@@ -28,7 +28,7 @@ type PrintableGrepResult = (Selector, [ (FileName, [ Int ]) ])
 
 parseCssFile :: String -> IO (Either String [ Selector ])
 parseCssFile cssFile =
-    readFile cssFile >>= return . parseCss
+    parseCss <$> readFile cssFile
 
 
 printSelectorList :: Either String [ Selector ] -> IO ()
@@ -42,7 +42,7 @@ printGrepResults :: [ PrintableGrepResult ] -> IO ()
 printGrepResults =
     let
         printPerGrepResult ( filename, lineNums ) =
-            putStrLn $ "    " ++ filename ++ (show lineNums)
+            putStrLn $ "    " ++ filename ++ show lineNums
 
         printPerSelector ( selector, grepResult ) = do
             setSGR [ SetColor Foreground Vivid Yellow ]
@@ -55,7 +55,7 @@ printGrepResults =
 
 transposeGrepResults :: [ (FileName, [ (Selector, [Int]) ]) ] -> [ (Selector, [ (FileName, [Int]) ]) ]
 transposeGrepResults =
-     groupBySnd . concat . (map flatten)
+     groupBySnd . concatMap flatten
 
 
 flatten :: ( a, [ (b,c) ]) -> [ (a,b,c) ]
@@ -78,9 +78,9 @@ groupBySnd =
                 getB  (_,b,_) = b
                 getAC (a,_,c) = (a,c)
             in
-                ( ((getB . head) list), map getAC list )
+                ( (getB . head) list, map getAC list )
     in
-        (map pullOutB) . groupByB . sortByB
+        map pullOutB . groupByB . sortByB
 
 
 filterResults :: Bool -> [ PrintableGrepResult ] -> [ PrintableGrepResult ]
@@ -88,14 +88,14 @@ filterResults unusedOnly =
     let
         filterEmpty :: [ (FileName, [ Int ]) ] -> [ (FileName, [ Int ]) ]
         filterEmpty =
-            filter (\ (filename, lineNums) -> length lineNums /= 0)
+            filter (\ (filename, lineNums) -> (not . null) lineNums)
 
         emptyFileFilter =
             map (\ (query, results) -> (query, filterEmpty results))
 
         unusedSelectorFilter =
             if unusedOnly
-                then filter (\ (query, files) -> length files == 0)
+                then filter (\ (query, files) -> null files)
                 else id
     in
         unusedSelectorFilter . emptyFileFilter
@@ -107,9 +107,8 @@ grepSelectors :: String -> Either String [Selector] -> IO (Either String [GrepRe
 grepSelectors path eitherSelectors =
     case eitherSelectors of
         Left err -> return $ Left err
-        Right selectors -> do
-            grepResults <- grepAt path selectors
-            return $ grepResults
+        Right selectors ->
+            grepAt path selectors
 
 
 orFilter :: [ a -> Bool ] -> a -> Bool

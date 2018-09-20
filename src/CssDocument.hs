@@ -19,8 +19,8 @@ import           Selector                         (Selector, selector)
 
 
 parseCss :: ByteString -> Either String [ Selector ]
-parseCss css = do
-    parseOnly document css
+parseCss =
+    parseOnly document
 
 
 document :: Parser [ Selector ]
@@ -65,7 +65,7 @@ declarationContent :: Parser ()
 declarationContent = do
     char '{'
     skipSpace
-    skipWhile ((/=) '}')
+    skipWhile ('}' /=)
     char '}'
     return ()
 
@@ -86,7 +86,7 @@ atRule = do
 nestedAtRule :: Parser [ Selector ]
 nestedAtRule = do
     char '@'
-    skipWhile ((/=) '{')
+    skipWhile ('{' /=)
     char '{'
     skipSpace
     selectors <- many (junk *> declaration <* junk)
